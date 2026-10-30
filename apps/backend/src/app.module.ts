@@ -4,6 +4,10 @@ import configuration from './config/configuration';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { EventsModule } from './events/events.module';
+import { AiModule } from './ai/ai.module';
+import { StorageModule } from './storage/storage.module';
+import { MediaModule } from './media/media.module';
+import { StudentsModule } from './students/students.module';
 
 @Module({
   imports: [
@@ -14,21 +18,18 @@ import { EventsModule } from './events/events.module';
     }),
     // Global database module
     DatabaseModule,
-    
+
+    // Storage & Media Pipeline
+    StorageModule,
+    MediaModule,
+
     // Feature Modules
     AuthModule,
     EventsModule,
-    
-    // Future Feature Modules:
-    // UsersModule,
-    // StudentsModule,
-    // OrganizationsModule,
-    // MediaModule,
-    
-    // Future Integration Modules:
-    // StorageModule,
-    // AiPipelineModule,
-    // NotificationsModule,
+    StudentsModule,
+
+    // AI Microservices Integration
+    AiModule,
   ],
 })
 export class AppModule {}
