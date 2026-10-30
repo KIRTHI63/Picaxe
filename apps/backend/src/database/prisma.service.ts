@@ -12,15 +12,27 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 
   constructor() {
     super({
-      log: process.env.NODE_ENV === 'development'
-        ? [{ emit: 'event', level: 'query' }, 'error', 'warn']
-        : ['error'],
+      datasources: process.env.DATABASE_URL
+        ? {
+            db: {
+              url: process.env.DATABASE_URL,
+            },
+          }
+        : undefined,
+      log:
+        process.env.NODE_ENV === 'development'
+          ? [{ emit: 'event', level: 'query' }, 'error', 'warn']
+          : ['error'],
     });
   }
 
   async onModuleInit(): Promise<void> {
-    await this.$connect();
-    this.logger.log('Database connection established');
+    try {
+      await this.$connect();
+      this.logger.log('Database connection established');
+    } catch (err) {
+      this.logger.warn(`Database connection warning: ${err.message}`);
+    }
   }
 
   async onModuleDestroy(): Promise<void> {
