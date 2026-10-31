@@ -30,7 +30,7 @@ export default function StudentDashboard() {
 
         {/* Welcome */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <h1 className="font-sans font-semibold text-3xl md:text-4xl text-bone mb-1.5">Welcome back, John</h1>
+          <h1 className="font-sans font-semibold text-3xl md:text-4xl text-bone mb-1.5">Welcome back, Kirthivasan</h1>
           <p className="font-sans text-ash">Your personalized event photo dashboard.</p>
         </motion.div>
 
