@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/Button';
@@ -501,47 +502,56 @@ function AnalyticsSection() {
 // ─── Event Row ────────────────────────────────────────────────────────────────
 
 function OrgEventRow({ ev, onSelectReview }: { ev: OrgEvent; onSelectReview?: (eventTitle: string) => void }) {
+  const router = useRouter();
   const statusBadge = {
     done:       <Badge variant="success" dot>Processed</Badge>,
     review:     <Badge variant="warning" dot pulse>{ev.reviewNeeded} Reviews</Badge>,
     processing: <Badge variant="info" dot pulse>Processing</Badge>,
   }[ev.status];
 
+  const handleOpen = () => {
+    router.push(`/organization/events/${ev.id}`);
+  };
+
   return (
-    <Link href={`/organization/events/${ev.id}`} className="block group">
-      <div className="card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-seam-gold/40 hover:bg-surface-50/40 transition-all cursor-pointer">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h3 className="font-sans font-medium text-bone group-hover:text-seam-gold transition-colors">{ev.title}</h3>
-            {statusBadge}
-          </div>
-          <p className="font-mono text-[10px] text-ash">
-            {ev.date} · {ev.media.toLocaleString()} files · {ev.matches.toLocaleString()} matches
-          </p>
+    <div
+      onClick={handleOpen}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleOpen();
+        }
+      }}
+      className="card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-seam-gold/40 hover:bg-surface-50/40 transition-all cursor-pointer group"
+    >
+      <div>
+        <div className="flex items-center gap-3 mb-1">
+          <h3 className="font-sans font-medium text-bone group-hover:text-seam-gold transition-colors">{ev.title}</h3>
+          {statusBadge}
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          {ev.status === 'review' && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onSelectReview?.(ev.title);
-              }}
-            >
-              Review Queue
-            </Button>
-          )}
+        <p className="font-mono text-[10px] text-ash">
+          {ev.date} · {ev.media.toLocaleString()} files · {ev.matches.toLocaleString()} matches
+        </p>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        {ev.status === 'review' && (
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
-            icon={<ChevronRight className="w-4 h-4 text-ash group-hover:text-seam-gold transition-colors" />}
-            aria-label={`Open ${ev.title}`}
-          />
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectReview?.(ev.title);
+            }}
+          >
+            Review Queue
+          </Button>
+        )}
+        <div className="w-8 h-8 rounded-md flex items-center justify-center text-ash group-hover:text-seam-gold group-hover:bg-surface transition-colors">
+          <ChevronRight className="w-4 h-4" />
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 

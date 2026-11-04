@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/Button';
@@ -66,11 +67,14 @@ const MATCHED_STUDENTS = [
   { id: 's5', name: 'Maria Garcia', email: 'maria@university.edu', photos: 8, certs: 1, confidence: 71, status: 'Review Needed' },
 ];
 
-export default function OrgEventView({ params }: { params: { id: string } }) {
+export default function OrgEventView() {
+  const routeParams = useParams();
+  const rawId = routeParams?.id;
+  const eventId = typeof rawId === 'string' ? rawId : Array.isArray(rawId) ? rawId[0] : 'evt-1';
   const { toast } = useToast();
-  const event = EVENTS_DATA[params.id] || {
-    id: params.id,
-    title: `Event ${params.id}`,
+  const event = EVENTS_DATA[eventId] || {
+    id: eventId,
+    title: `Event ${eventId}`,
     date: 'Recent',
     media: 120,
     matches: 85,
