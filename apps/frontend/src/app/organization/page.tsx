@@ -171,7 +171,7 @@ function CreateEventModal({ onClose, onCreate }: CreateEventModalProps) {
 
 // ─── Sections ─────────────────────────────────────────────────────────────────
 
-function OverviewSection({ events, onCreateEvent }: { events: OrgEvent[]; onCreateEvent: () => void }) {
+function OverviewSection({ events, onCreateEvent, onSelectReview }: { events: OrgEvent[]; onCreateEvent: () => void; onSelectReview?: (title: string) => void }) {
   const { toast } = useToast();
   return (
     <div className="flex flex-col gap-8">
@@ -213,14 +213,14 @@ function OverviewSection({ events, onCreateEvent }: { events: OrgEvent[]; onCrea
           <h2 className="font-sans font-semibold text-lg text-bone">Recent Events</h2>
         </div>
         <div className="flex flex-col gap-3">
-          {events.map(ev => <OrgEventRow key={ev.id} ev={ev} />)}
+          {events.map(ev => <OrgEventRow key={ev.id} ev={ev} onSelectReview={onSelectReview} />)}
         </div>
       </section>
     </div>
   );
 }
 
-function EventsSection({ events, onCreateEvent }: { events: OrgEvent[]; onCreateEvent: () => void }) {
+function EventsSection({ events, onCreateEvent, onSelectReview }: { events: OrgEvent[]; onCreateEvent: () => void; onSelectReview?: (title: string) => void }) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | EventStatus>('all');
   const filtered = events.filter(e =>
@@ -264,7 +264,7 @@ function EventsSection({ events, onCreateEvent }: { events: OrgEvent[]; onCreate
 
       {filtered.length > 0 ? (
         <div className="flex flex-col gap-3">
-          {filtered.map(ev => <OrgEventRow key={ev.id} ev={ev} />)}
+          {filtered.map(ev => <OrgEventRow key={ev.id} ev={ev} onSelectReview={onSelectReview} />)}
         </div>
       ) : (
         <EmptyState
@@ -278,10 +278,16 @@ function EventsSection({ events, onCreateEvent }: { events: OrgEvent[]; onCreate
   );
 }
 
-function ReviewQueueSection() {
+function ReviewQueueSection({ initialSearch = '' }: { initialSearch?: string }) {
   const { toast } = useToast();
   const [items, setItems] = useState(REVIEW_QUEUE);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch);
+
+  React.useEffect(() => {
+    if (initialSearch) {
+      setSearch(initialSearch);
+    }
+  }, [initialSearch]);
   const filtered = items.filter(r =>
     r.student.toLowerCase().includes(search.toLowerCase()) ||
     r.event.toLowerCase().includes(search.toLowerCase()) ||
@@ -494,7 +500,7 @@ function AnalyticsSection() {
 
 // ─── Event Row ────────────────────────────────────────────────────────────────
 
-function OrgEventRow({ ev }: { ev: OrgEvent }) {
+function OrgEventRow({ ev, onSelectReview }: { ev: OrgEvent; onSelectReview?: (eventTitle: string) => void }) {
   const statusBadge = {
     done:       <Badge variant="success" dot>Processed</Badge>,
     review:     <Badge variant="warning" dot pulse>{ev.reviewNeeded} Reviews</Badge>,
@@ -502,23 +508,40 @@ function OrgEventRow({ ev }: { ev: OrgEvent }) {
   }[ev.status];
 
   return (
-    <div className="card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-ash/25 transition-colors">
-      <div>
-        <div className="flex items-center gap-3 mb-1">
-          <h3 className="font-sans font-medium text-bone">{ev.title}</h3>
-          {statusBadge}
+    <Link href={`/organization/events/${ev.id}`} className="block group">
+      <div className="card p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-seam-gold/40 hover:bg-surface-50/40 transition-all cursor-pointer">
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            <h3 className="font-sans font-medium text-bone group-hover:text-seam-gold transition-colors">{ev.title}</h3>
+            {statusBadge}
+          </div>
+          <p className="font-mono text-[10px] text-ash">
+            {ev.date} · {ev.media.toLocaleString()} files · {ev.matches.toLocaleString()} matches
+          </p>
         </div>
-        <p className="font-mono text-[10px] text-ash">
-          {ev.date} · {ev.media.toLocaleString()} files · {ev.matches.toLocaleString()} matches
-        </p>
+        <div className="flex items-center gap-3 shrink-0">
+          {ev.status === 'review' && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onSelectReview?.(ev.title);
+              }}
+            >
+              Review Queue
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<ChevronRight className="w-4 h-4 text-ash group-hover:text-seam-gold transition-colors" />}
+            aria-label={`Open ${ev.title}`}
+          />
+        </div>
       </div>
-      <div className="flex items-center gap-3 shrink-0">
-        {ev.status === 'review' && (
-          <Button variant="secondary" size="sm">Review Queue</Button>
-        )}
-        <Button variant="ghost" size="sm" icon={<ChevronRight className="w-4 h-4" />} aria-label={`Open ${ev.title}`} />
-      </div>
-    </div>
+    </Link>
   );
 }
 
@@ -528,6 +551,11 @@ export default function OrganizationDashboard() {
   const [activeSection, setActiveSection] = useState<Section>('overview');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [events, setEvents] = useState<OrgEvent[]>(INITIAL_EVENTS);
+  const [reviewSearchQuery, setReviewSearchQuery] = useState('');
+  const handleSelectReview = (title: string) => {
+    setReviewSearchQuery(title);
+    setActiveSection('review');
+  };
   const reviewCount = events.reduce((sum, e) => sum + e.reviewNeeded, 0);
 
   const addEvent = (ev: OrgEvent) => setEvents(prev => [ev, ...prev]);
@@ -538,9 +566,9 @@ export default function OrganizationDashboard() {
   };
 
   const sectionContent: Record<Section, React.ReactNode> = {
-    overview:  <OverviewSection events={events} onCreateEvent={() => setShowCreateModal(true)} />,
-    events:    <EventsSection events={events} onCreateEvent={() => setShowCreateModal(true)} />,
-    review:    <ReviewQueueSection />,
+    overview:  <OverviewSection events={events} onCreateEvent={() => setShowCreateModal(true)} onSelectReview={handleSelectReview} />,
+    events:    <EventsSection events={events} onCreateEvent={() => setShowCreateModal(true)} onSelectReview={handleSelectReview} />,
+    review:    <ReviewQueueSection initialSearch={reviewSearchQuery} />,
     students:  <StudentsSection />,
     analytics: <AnalyticsSection />,
   };
