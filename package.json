@@ -8,6 +8,7 @@
     "dev:frontend": "npm run dev --workspace=apps/frontend",
     "dev:backend": "npm run start:dev --workspace=apps/backend",
     "dev:mock-ai": "npm run mock:ai --workspace=apps/backend",
+    "check:ai": "node apps/backend/scripts/test-pipeline.js",
     "build:frontend": "npm run build --workspace=apps/frontend",
     "build:backend": "npm run build --workspace=apps/backend",
     "test:backend": "npm run test --workspace=apps/backend"
