@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { MatchHighlight } from '@/components/MatchHighlight';
 import { useToast } from '@/components/ui/Toast';
 import { UploadCloud, ScanFace, ArrowRight, RefreshCw } from 'lucide-react';
+import { saveRealStudentFace } from '@/lib/picaxe-store';
 
 export default function StudentRegister() {
   const [status, setStatus] = useState<'idle' | 'uploading' | 'success'>('idle');
@@ -57,6 +58,7 @@ export default function StudentRegister() {
       });
 
       if (res.ok) {
+        if (previewUrl) saveRealStudentFace(previewUrl);
         setStatus('success');
         setFeedbackLine('Face detected · Lighting: Optimal · Biometric vector embedded');
         toast({
@@ -67,6 +69,7 @@ export default function StudentRegister() {
       } else {
         // Fallback for frontend demo if not authenticated with JWT
         setTimeout(() => {
+          if (previewUrl) saveRealStudentFace(previewUrl);
           setStatus('success');
           setFeedbackLine('Face detected · Biometric identity embedded');
           toast({
@@ -79,6 +82,7 @@ export default function StudentRegister() {
     } catch {
       // Offline / fallback demo simulation with real image
       setTimeout(() => {
+        if (previewUrl) saveRealStudentFace(previewUrl);
         setStatus('success');
         setFeedbackLine('Face detected · Biometric identity embedded');
         toast({
