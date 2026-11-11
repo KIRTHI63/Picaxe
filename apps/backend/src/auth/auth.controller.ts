@@ -12,7 +12,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @ApiOperation({ summary: 'Register a new student' })
+  @ApiOperation({ summary: 'Register a new student or organization user' })
   @ApiResponse({ status: 201, description: 'User successfully registered' })
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
@@ -31,6 +31,6 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   async getMe(@CurrentUser() user: AuthenticatedUser) {
-    return user;
+    return this.authService.getMe(user.userId);
   }
 }

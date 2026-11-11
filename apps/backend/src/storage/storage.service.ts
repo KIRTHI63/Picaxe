@@ -44,16 +44,21 @@ export class StorageService implements OnModuleInit {
 
     await fs.writeFile(filePath, file.buffer);
 
-    const publicBaseUrl =
-      this.configService.get<string>('storage.publicBaseUrl') || 'http://localhost:3001/uploads';
-    const publicUrl = `${publicBaseUrl}/${storageKey}`;
-
     return {
       storageKey,
-      publicUrl,
+      publicUrl: this.getPublicUrl(storageKey),
       fileSizeBytes: BigInt(file.buffer.length),
       mimeType: file.mimetype,
     };
+  }
+
+  /**
+   * Builds the public URL for a stored media asset.
+   */
+  getPublicUrl(storageKey: string): string {
+    const publicBaseUrl =
+      this.configService.get<string>('storage.publicBaseUrl') || 'http://localhost:3001/uploads';
+    return `${publicBaseUrl}/${storageKey}`;
   }
 
   /**

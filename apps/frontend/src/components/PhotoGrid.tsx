@@ -36,14 +36,23 @@ export function PhotoGrid({ items, title, meta, className }: PhotoGridProps) {
             className={cn('aspect-[4/3] w-full', !item.isMatch && hasMatches && 'group-hover/grid:opacity-40 transition-opacity duration-300')}
           >
             <MatchHighlight isMatched={item.isMatch} delay={idx * 40} className="w-full h-full">
-              <div
-                className="w-full h-full bg-basalt flex items-center justify-center bg-cover bg-center"
-                style={item.url ? { backgroundImage: `url(${item.url})` } : {}}
-                role="img"
-                aria-label={item.isMatch ? `Matched ${item.type}` : item.type}
-              >
-                {!item.url && <ImageIcon className="w-5 h-5 text-ash/20" aria-hidden="true" />}
-              </div>
+              {item.url ? (
+                <a href={item.url} target="_blank" rel="noopener noreferrer" className="block w-full h-full bg-basalt">
+                  <img
+                    src={item.url}
+                    alt={item.isMatch ? `Matched ${item.type}` : item.type}
+                    className="w-full h-full object-cover"
+                  />
+                </a>
+              ) : (
+                <div
+                  className="w-full h-full bg-basalt flex items-center justify-center"
+                  role="img"
+                  aria-label={item.isMatch ? `Matched ${item.type}` : item.type}
+                >
+                  <ImageIcon className="w-5 h-5 text-ash/20" aria-hidden="true" />
+                </div>
+              )}
             </MatchHighlight>
           </div>
         ))}

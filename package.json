@@ -6,8 +6,9 @@
   ],
   "scripts": {
     "dev:frontend": "npm run dev --workspace=apps/frontend",
-    "dev:backend": "npm run start:dev --workspace=apps/backend",
-    "dev:mock-ai": "npm run mock:ai --workspace=apps/backend",
+    "dev:backend": "node apps/backend/scripts/dev-backend.js",
+    "dev:face": "node apps/face-engine/start.js",
+    "dev:nlp": ".\\.venv-ai\\Scripts\\uvicorn.exe app.main:app --app-dir apps/nlp-engine --port 8001",
     "check:ai": "node apps/backend/scripts/test-pipeline.js",
     "build:frontend": "npm run build --workspace=apps/frontend",
     "build:backend": "npm run build --workspace=apps/backend",

@@ -1,5 +1,7 @@
 import 'dotenv/config';
+import * as path from 'path';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -9,15 +11,19 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
   const logger = new Logger('Bootstrap');
 
   // Enable CORS for frontend
   app.enableCors({
-    origin: '*', // tighten in production based on env vars
+    origin: true,
     credentials: true,
   });
+
+  // Serve locally stored uploaded media files at /uploads/*
+  const uploadDir = path.resolve(process.cwd(), 'uploads');
+  app.useStaticAssets(uploadDir, { prefix: '/uploads/' });
 
   // Global validation pipe
   app.useGlobalPipes(

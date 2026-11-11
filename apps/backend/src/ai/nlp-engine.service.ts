@@ -106,4 +106,17 @@ export class NlpEngineService {
       );
     }
   }
+
+  async checkHealth(): Promise<boolean> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<{ status?: string }>(`${this.baseUrl}/health`, {
+          timeout: 2000,
+        }),
+      );
+      return response.data?.status === 'ok';
+    } catch {
+      return false;
+    }
+  }
 }

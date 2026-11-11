@@ -29,8 +29,16 @@ class QdrantRepository:
         if self._client is None:
             try:
                 api_key = settings.QDRANT_API_KEY if settings.QDRANT_API_KEY else None
-                logger.info(f"Connecting to Qdrant at {settings.QDRANT_URL}...")
-                self._client = QdrantClient(url=settings.QDRANT_URL, api_key=api_key)
+                if settings.QDRANT_URL == ":memory:":
+                    logger.info("Connecting to embedded in-memory Qdrant...")
+                    self._client = QdrantClient(location=":memory:")
+                elif settings.QDRANT_URL.startswith("local:"):
+                    local_path = settings.QDRANT_URL[len("local:"):] or "./qdrant_storage"
+                    logger.info(f"Connecting to embedded local Qdrant at {local_path}...")
+                    self._client = QdrantClient(path=local_path)
+                else:
+                    logger.info(f"Connecting to Qdrant at {settings.QDRANT_URL}...")
+                    self._client = QdrantClient(url=settings.QDRANT_URL, api_key=api_key)
                 self.ensure_collection()
             except Exception as exc:
                 logger.warning(f"Qdrant connection failed: {exc}")
@@ -52,7 +60,7 @@ class QdrantRepository:
         Enforces 512 dimensions and Cosine distance metric.
         """
         try:
-            client = self._client if self._client else QdrantClient(url=settings.QDRANT_URL)
+            client = self._client if self._client else self.get_client()
             collections = client.get_collections().collections
             exists = any(c.name == settings.QDRANT_COLLECTION for c in collections)
 
@@ -156,22 +164,33 @@ class QdrantRepository:
         """
         client = self.get_client()
         threshold = score_threshold if score_threshold is not None else settings.SIMILARITY_THRESHOLD
+        qfilter = qmodels.Filter(
+            must=[
+                qmodels.FieldCondition(
+                    key="is_active",
+                    match=qmodels.MatchValue(value=True)
+                )
+            ]
+        )
 
         try:
-            results = client.search(
-                collection_name=settings.QDRANT_COLLECTION,
-                query_vector=query_embedding,
-                limit=limit,
-                score_threshold=threshold,
-                query_filter=qmodels.Filter(
-                    must=[
-                        qmodels.FieldCondition(
-                            key="is_active",
-                            match=qmodels.MatchValue(value=True)
-                        )
-                    ]
+            if hasattr(client, "query_points"):
+                resp = client.query_points(
+                    collection_name=settings.QDRANT_COLLECTION,
+                    query=query_embedding,
+                    limit=limit,
+                    score_threshold=threshold,
+                    query_filter=qfilter,
                 )
-            )
+                results = resp.points
+            else:
+                results = client.search(
+                    collection_name=settings.QDRANT_COLLECTION,
+                    query_vector=query_embedding,
+                    limit=limit,
+                    score_threshold=threshold,
+                    query_filter=qfilter,
+                )
 
             matches = []
             for res in results:

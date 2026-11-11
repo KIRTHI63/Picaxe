@@ -8,6 +8,7 @@ import { AiModule } from './ai/ai.module';
 import { StorageModule } from './storage/storage.module';
 import { MediaModule } from './media/media.module';
 import { StudentsModule } from './students/students.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { StudentsModule } from './students/students.module';
     AuthModule,
     EventsModule,
     StudentsModule,
+    DashboardModule,
 
     // AI Microservices Integration
     AiModule,

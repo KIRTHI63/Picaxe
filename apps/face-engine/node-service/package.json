@@ -1,0 +1,16 @@
+{
+  "name": "picaxe-face-engine-node",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local TensorFlow WASM + FaceNet ResNet-34 face recognition engine implementing the Picaxe Face Engine API contract.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-backend-wasm": "^4.22.0",
+    "@vladmandic/face-api": "^1.7.15",
+    "sharp": "^0.35.5"
+  }
+}

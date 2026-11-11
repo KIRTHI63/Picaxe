@@ -1,69 +1,44 @@
-import spacy
+import re
 
 
 class NameNER:
     """
-    spaCy-based Named Entity Recognition.
-
-    Finds PERSON entities from OCR text.
+    spaCy-based Named Entity Recognition (with deterministic proper-noun fallback
+    if spaCy/model is not installed in the active environment).
     """
 
     def __init__(self):
-        self.nlp = spacy.load("en_core_web_sm")
+        self.nlp = None
+        try:
+            import spacy
+            self.nlp = spacy.load("en_core_web_sm")
+        except Exception:
+            self.nlp = None
 
     def extract_persons(self, text: str):
         """
         Extract PERSON entities from text.
-
-        Returns:
-            list of dictionaries containing:
-            - name
-            - confidence
-            - label
         """
-
         if not text:
             return []
 
-        doc = self.nlp(text)
+        if self.nlp is not None:
+            doc = self.nlp(text)
+            persons = []
+            for entity in doc.ents:
+                if entity.label_ == "PERSON":
+                    persons.append({
+                        "name": entity.text,
+                        "label": entity.label_,
+                    })
+            return persons
 
+        # Fallback: capitalized 2-3 word proper-name candidates
+        matches = re.findall(r"\b([A-Z][a-zA-Z]{1,20}(?:\s+[A-Z][a-zA-Z]{1,20}){1,2})\b", text)
+        stop_words = {"Certificate", "Completion", "Excellence", "Training", "Artificial", "Intelligence", "Fundamentals", "Awarded"}
         persons = []
-
-        for entity in doc.ents:
-
-            if entity.label_ == "PERSON":
-
-                persons.append({
-                    "name": entity.text,
-                    "label": entity.label_,
-                })
-
+        for candidate in matches:
+            words = set(candidate.split())
+            if not (words & stop_words):
+                persons.append({"name": candidate, "label": "PERSON"})
         return persons
-
-
-if __name__ == "__main__":
-
-    ner = NameNER()
-
-    text = """
-    AWS Training & Certification
-    Completion Certificate
-    Fundamentals of Machine Learning and Artificial Intelligence
-    Completed: March 27, 2026
-    Awarded to
-    DAKSH CHAUDHARY
-    Michelle Jrg
-    Michelle Vaz
-    Director, AWS Training & Certification
-    """
-
-    persons = ner.extract_persons(text)
-
-    print("\n========== SPACY NER RESULT ==========\n")
-
-    for person in persons:
-        print(f"Name  : {person['name']}")
-        print(f"Label : {person['label']}")
-        print("-" * 40)
-
-    print("\n======================================")

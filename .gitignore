@@ -44,3 +44,10 @@ logs/
 # Docker
 docker_postgres_data/
 docker_qdrant_data/
+
+# Local AI venv & storage
+.venv-ai/
+qdrant_storage/
+uploads/
+pgdata/
+.local-db-url
