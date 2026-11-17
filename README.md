@@ -1,6 +1,8 @@
 # 🪓 Picaxe Monorepo
 
 > **AI-Powered Event Media & Certificate Distribution Engine**
+>
+> 📄 **Official Project Report & Technical Architecture Document:** [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md)
 
 Picaxe is an intelligent, privacy-first event media distribution platform designed for hackathons, universities, and conferences. It automatically indexes event photo galleries and certificates using facial recognition and NLP-based document OCR, delivering matched assets directly to participating students with zero manual sorting.
 
