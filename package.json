@@ -10,6 +10,7 @@
     "dev:face": "node apps/face-engine/start.js",
     "dev:nlp": ".\\.venv-ai\\Scripts\\uvicorn.exe app.main:app --app-dir apps/nlp-engine --port 8001",
     "check:ai": "node apps/backend/scripts/test-pipeline.js",
+    "db:studio": "node apps/backend/scripts/start-studio.js",
     "build:frontend": "npm run build --workspace=apps/frontend",
     "build:backend": "npm run build --workspace=apps/backend",
     "test:backend": "npm run test --workspace=apps/backend"
