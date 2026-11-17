@@ -22,7 +22,7 @@ export class DashboardController {
   }
 
   @Get('admin/dashboard')
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('ORGANIZATION', 'ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Get real system-wide admin console metrics, audit logs, organizations, and events' })
   async getAdminDashboard() {
     return this.dashboardService.getAdminDashboard();

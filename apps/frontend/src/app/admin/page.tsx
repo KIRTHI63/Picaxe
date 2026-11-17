@@ -37,8 +37,8 @@ export default function AdminDashboard() {
       setLoading(false);
       return;
     }
-    if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
-      setAuthError(`Access restricted: signed in as ${user.role} (${user.email}). ADMIN role is required.`);
+    if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN' && user.role !== 'ORGANIZATION') {
+      setAuthError(`Access restricted: signed in as ${user.role} (${user.email}). ADMIN or ORGANIZATION role is required.`);
       setLoading(false);
       return;
     }
