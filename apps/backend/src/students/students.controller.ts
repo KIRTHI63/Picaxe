@@ -19,7 +19,7 @@ import type { AuthenticatedUser } from '../shared/types';
 @ApiTags('Students')
 @Controller('students')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('STUDENT', 'ADMIN')
+@Roles('STUDENT', 'ORGANIZATION', 'ADMIN')
 @ApiBearerAuth()
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}

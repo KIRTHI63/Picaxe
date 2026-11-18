@@ -18,7 +18,7 @@ export class StudentsService {
    * Retrieves profile of current authenticated student.
    */
   async getProfile(userId: string) {
-    const student = await this.prisma.studentProfile.findUnique({
+    let student = await this.prisma.studentProfile.findUnique({
       where: { userId },
       include: {
         user: {
@@ -32,7 +32,28 @@ export class StudentsService {
     });
 
     if (!student) {
-      throw new ResourceNotFoundException('StudentProfile for user', userId);
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId, deletedAt: null },
+      });
+      if (!user) {
+        throw new ResourceNotFoundException('StudentProfile for user', userId);
+      }
+      student = await this.prisma.studentProfile.create({
+        data: {
+          userId,
+          fullName: user.displayName,
+          registrationStatus: 'PENDING',
+        },
+        include: {
+          user: {
+            select: {
+              displayName: true,
+              credentials: { select: { email: true } },
+            },
+          },
+          faceEmbedding: true,
+        },
+      });
     }
 
     return {
@@ -52,11 +73,23 @@ export class StudentsService {
     userId: string,
     file: { buffer: Buffer; originalname: string; mimetype: string },
   ) {
-    const student = await this.prisma.studentProfile.findUnique({
+    let student = await this.prisma.studentProfile.findUnique({
       where: { userId },
     });
     if (!student) {
-      throw new ResourceNotFoundException('StudentProfile for user', userId);
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId, deletedAt: null },
+      });
+      if (!user) {
+        throw new ResourceNotFoundException('StudentProfile for user', userId);
+      }
+      student = await this.prisma.studentProfile.create({
+        data: {
+          userId,
+          fullName: user.displayName,
+          registrationStatus: 'PENDING',
+        },
+      });
     }
 
     const base64Data = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
