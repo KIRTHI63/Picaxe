@@ -90,6 +90,10 @@ async function main() {
     const { PGLiteSocketServer } = require('@electric-sql/pglite-socket');
 
     fs.mkdirSync(pgDataDir, { recursive: true });
+    const stalePid = path.join(pgDataDir, 'postmaster.pid');
+    if (fs.existsSync(stalePid)) {
+      try { fs.unlinkSync(stalePid); } catch {}
+    }
     const port = await findFreePort(5432);
     db = await PGlite.create(pgDataDir);
     socketServer = new PGLiteSocketServer({
