@@ -233,7 +233,9 @@ function evaluateQuality(rgbBuffer, imgWidth, imgHeight, bbox, enforceFraction =
   };
 
   if (enforceFraction && faceFraction < config.minFaceFraction) {
-    return { ...metrics, valid: false, reason: 'FACE_TOO_SMALL' };
+    if (cropW < 32 || cropH < 32) {
+      return { ...metrics, valid: false, reason: 'FACE_TOO_SMALL' };
+    }
   }
   if (blurScore < config.blurThreshold) {
     return { ...metrics, valid: false, reason: 'IMAGE_TOO_BLURRY' };
