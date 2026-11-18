@@ -31,7 +31,7 @@ loadEnvFile(ENV_PATH);
 const config = {
   port: parseInt(process.env.PORT || '8000', 10),
   host: process.env.HOST || '0.0.0.0',
-  minFaceFraction: parseFloat(process.env.MIN_FACE_FRACTION || '0.03'),
+  minFaceFraction: parseFloat(process.env.MIN_FACE_FRACTION || '0.01'),
   blurThreshold: parseFloat(process.env.BLUR_THRESHOLD || '40.0'),
   minBrightness: parseFloat(process.env.MIN_BRIGHTNESS || '25.0'),
   maxBrightness: parseFloat(process.env.MAX_BRIGHTNESS || '240.0'),
@@ -264,15 +264,18 @@ function classifyTier(similarity) {
   return 'DISCARD';
 }
 
-async function analyzeImage(imageBuffer, minConfidence = 0.48, maxResults = 25) {
+async function analyzeImage(imageBuffer, minConfidence = 0.35, maxResults = 25) {
   let info;
   let data;
   try {
-    const decoded = await sharp(imageBuffer)
-      .rotate() // Respect EXIF camera orientation on mobile portraits
-      .removeAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
+    const meta = await sharp(imageBuffer).metadata();
+    const maxDim = 1280;
+    const longest = Math.max(meta.width || 0, meta.height || 0);
+    let pipeline = sharp(imageBuffer).rotate().removeAlpha();
+    if (longest > maxDim) {
+      pipeline = pipeline.resize({ width: maxDim, height: maxDim, fit: 'inside' });
+    }
+    const decoded = await pipeline.raw().toBuffer({ resolveWithObject: true });
     data = decoded.data;
     info = decoded.info;
   } catch (err) {
@@ -285,11 +288,20 @@ async function analyzeImage(imageBuffer, minConfidence = 0.48, maxResults = 25) 
   return runSerialized(async () => {
     const tensor = faceapi.tf.tensor3d(new Int32Array(data), [info.height, info.width, 3], 'int32');
     try {
-      const options = new faceapi.SsdMobilenetv1Options({ minConfidence, maxResults });
-      const detections = await faceapi
+      let options = new faceapi.SsdMobilenetv1Options({ minConfidence, maxResults });
+      let detections = await faceapi
         .detectAllFaces(tensor, options)
         .withFaceLandmarks()
         .withFaceDescriptors();
+
+      // Fallback pass if primary confidence threshold misses an unconstrained face (e.g. outdoor foliage, glasses, distance)
+      if (detections.length === 0 && minConfidence > 0.20) {
+        options = new faceapi.SsdMobilenetv1Options({ minConfidence: 0.20, maxResults });
+        detections = await faceapi
+          .detectAllFaces(tensor, options)
+          .withFaceLandmarks()
+          .withFaceDescriptors();
+      }
 
       const faces = detections.map((det) => {
         const box = det.detection.box;
@@ -381,6 +393,7 @@ async function handleRequest(req, res) {
 
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   const pathname = parsedUrl.pathname;
+  console.log(`[FaceEngine] ${req.method} ${pathname}`);
 
   if (req.method === 'GET' && (pathname === '/' || pathname === '/health')) {
     sendJson(res, 200, {
@@ -422,7 +435,7 @@ async function handleRequest(req, res) {
     const imgBuf = decodeBase64Image(body.image_base64);
 
     if (pathname === '/face/quality-check') {
-      const analyzed = await analyzeImage(imgBuf, 0.48, 10);
+      const analyzed = await analyzeImage(imgBuf, 0.35, 10);
       if (analyzed.faces.length === 0) {
         sendJson(res, 200, { face_count: 0, quality: zeroQuality('NO_FACE_DETECTED') });
         return;
@@ -448,7 +461,8 @@ async function handleRequest(req, res) {
         return;
       }
 
-      const analyzed = await analyzeImage(imgBuf, 0.5, 10);
+      const analyzed = await analyzeImage(imgBuf, 0.35, 10);
+      console.log(`[FaceEngine] /face/register: detected ${analyzed.faces.length} faces for student ${studentId}`);
 
       if (analyzed.faces.length === 0) {
         sendJson(res, 422, {
@@ -513,7 +527,7 @@ async function handleRequest(req, res) {
     }
 
     if (pathname === '/face/embed') {
-      const analyzed = await analyzeImage(imgBuf, 0.5, 5);
+      const analyzed = await analyzeImage(imgBuf, 0.35, 5);
       if (analyzed.faces.length === 0) {
         sendJson(res, 422, {
           success: false,
@@ -532,7 +546,7 @@ async function handleRequest(req, res) {
         : config.similarityThreshold;
       const limitPerFace = typeof body.limit_per_face === 'number' ? body.limit_per_face : 5;
 
-      const analyzed = await analyzeImage(imgBuf, 0.45, 25);
+      const analyzed = await analyzeImage(imgBuf, 0.35, 25);
       const faces = analyzed.faces.map((face, index) => {
         const quality = evaluateQuality(analyzed.rgbBuffer, analyzed.width, analyzed.height, face.bbox, false);
         const matches = vectorStore.search(face.descriptor, scoreThreshold, limitPerFace).map((m) => ({
@@ -564,7 +578,7 @@ async function handleRequest(req, res) {
         : config.similarityThreshold;
       const limit = typeof body.limit === 'number' ? body.limit : 10;
 
-      const analyzed = await analyzeImage(imgBuf, 0.45, 25);
+      const analyzed = await analyzeImage(imgBuf, 0.35, 25);
       const bestByStudent = new Map();
       for (const face of analyzed.faces) {
         for (const match of vectorStore.search(face.descriptor, scoreThreshold, limit)) {
